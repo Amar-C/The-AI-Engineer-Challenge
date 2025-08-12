@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penny Stock Gainers - US Market</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-item label {
+            color: white;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .control-item input,
+        .control-item select {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            min-width: 120px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .stocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stock-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stock-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00b894, #00cec9);
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .stock-symbol {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3436;
+        }
+
+        .stock-change {
+            text-align: right;
+        }
+
+        .change-amount {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #00b894;
+        }
+
+        .change-percent {
+            font-size: 1.1rem;
+            color: #00b894;
+            font-weight: 500;
+        }
+
+        .stock-name {
+            font-size: 1rem;
+            color: #636e72;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .stock-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            color: #636e72;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3436;
+        }
+
+        .stock-sector {
+            background: rgba(116, 75, 162, 0.1);
+            color: #764ba2;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .error {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: #d63031;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .stats h3 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .refresh-info {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stocks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-item input,
+            .control-item select {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Penny Stock Gainers</h1>
+            <p>Track the top performing penny stocks in the US market</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="control-item">
+                    <label for="limit">Number of Stocks</label>
+                    <select id="limit">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label for="minPrice">Min Price</label>
+                    <input type="number" id="minPrice" value="0.01" step="0.01" min="0.01">
+                </div>
+                <div class="control-item">
+                    <label for="maxPrice">Max Price</label>
+                    <input type="number" id="maxPrice" value="5.00" step="0.01" min="0.01">
+                </div>
+                <div class="control-item">
+                    <label>&nbsp;</label>
+                    <button class="btn" id="fetchBtn">
+                        <i class="fas fa-sync-alt"></i> Fetch Stocks
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Fetching penny stock data...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="stats" class="stats" style="display: none;">
+            <h3><i class="fas fa-chart-bar"></i> Market Overview</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalStocks">0</div>
+                    <div class="stat-label">Total Stocks</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgGain">0%</div>
+                    <div class="stat-label">Average Gain</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="topGainer">0%</div>
+                    <div class="stat-label">Top Gainer</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="lastUpdate">-</div>
+                    <div class="stat-label">Last Update</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="stocksContainer" class="stocks-grid"></div>
+
+        <div class="refresh-info">
+            <p>Data refreshes automatically every 5 minutes. Click "Fetch Stocks" to update manually.</p>
+        </div>
+    </div>
+
+    <script>
+        class PennyStockApp {
+            constructor() {
+                this.apiUrl = 'http://localhost:8000/api/penny-stocks/gainers';
+                this.stocks = [];
+                this.autoRefreshInterval = null;
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+                this.fetchStocks();
+                this.startAutoRefresh();
+            }
+
+            bindEvents() {
+                document.getElementById('fetchBtn').addEventListener('click', () => {
+                    this.fetchStocks();
+                });
+
+                // Auto-refresh when limit changes
+                document.getElementById('limit').addEventListener('change', () => {
+                    this.fetchStocks();
+                });
+            }
+
+            async fetchStocks() {
+                const limit = document.getElementById('limit').value;
+                const loading = document.getElementById('loading');
+                const error = document.getElementById('error');
+                const fetchBtn = document.getElementById('fetchBtn');
+
+                try {
+                    loading.style.display = 'block';
+                    error.style.display = 'none';
+                    fetchBtn.disabled = true;
+
+                    const response = await fetch(`${this.apiUrl}?limit=${limit}`);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    this.stocks = data.stocks;
+
+                    this.displayStocks();
+                    this.updateStats(data);
+                    this.showStats();
+
+                } catch (err) {
+                    console.error('Error fetching stocks:', err);
+                    this.showError(`Failed to fetch stock data: ${err.message}`);
+                } finally {
+                    loading.style.display = 'none';
+                    fetchBtn.disabled = false;
+                }
+            }
+
+            displayStocks() {
+                const container = document.getElementById('stocksContainer');
+                container.innerHTML = '';
+
+                if (this.stocks.length === 0) {
+                    container.innerHTML = `
+                        <div class="stock-card" style="grid-column: 1 / -1; text-align: center;">
+                            <h3>No penny stocks found</h3>
+                            <p>Try adjusting the filters or check back later.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.stocks.forEach(stock => {
+                    const card = this.createStockCard(stock);
+                    container.appendChild(card);
+                });
+            }
+
+            createStockCard(stock) {
+                const card = document.createElement('div');
+                card.className = 'stock-card';
+
+                const marketCap = stock.market_cap ? this.formatMarketCap(stock.market_cap) : 'N/A';
+                const sector = stock.sector || 'Unknown';
+
+                card.innerHTML = `
+                    <div class="stock-header">
+                        <div class="stock-symbol">${stock.symbol}</div>
+                        <div class="stock-change">
+                            <div class="change-amount">+$${stock.change.toFixed(4)}</div>
+                            <div class="change-percent">+${stock.change_percent.toFixed(2)}%</div>
+                        </div>
+                    </div>
+                    <div class="stock-name">${stock.company_name}</div>
+                    <div class="stock-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Current Price</div>
+                            <div class="detail-value">$${stock.current_price.toFixed(4)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Previous Close</div>
+                            <div class="detail-value">$${stock.previous_close.toFixed(4)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Volume</div>
+                            <div class="detail-value">${this.formatNumber(stock.volume)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Market Cap</div>
+                            <div class="detail-value">${marketCap}</div>
+                        </div>
+                    </div>
+                    <div class="stock-sector">${sector}</div>
+                `;
+
+                return card;
+            }
+
+            updateStats(data) {
+                if (this.stocks.length === 0) return;
+
+                const totalStocks = this.stocks.length;
+                const avgGain = this.stocks.reduce((sum, stock) => sum + stock.change_percent, 0) / totalStocks;
+                const topGainer = Math.max(...this.stocks.map(stock => stock.change_percent));
+                const lastUpdate = new Date(data.timestamp).toLocaleTimeString();
+
+                document.getElementById('totalStocks').textContent = totalStocks;
+                document.getElementById('avgGain').textContent = `${avgGain.toFixed(2)}%`;
+                document.getElementById('topGainer').textContent = `${topGainer.toFixed(2)}%`;
+                document.getElementById('lastUpdate').textContent = lastUpdate;
+            }
+
+            showStats() {
+                document.getElementById('stats').style.display = 'block';
+            }
+
+            showError(message) {
+                const error = document.getElementById('error');
+                error.textContent = message;
+                error.style.display = 'block';
+            }
+
+            formatNumber(num) {
+                if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+                if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+                if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+                return num.toString();
+            }
+
+            formatMarketCap(marketCap) {
+                if (!marketCap) return 'N/A';
+                return this.formatNumber(marketCap);
+            }
+
+            startAutoRefresh() {
+                // Refresh every 5 minutes
+                this.autoRefreshInterval = setInterval(() => {
+                    this.fetchStocks();
+                }, 5 * 60 * 1000);
+            }
+
+            stopAutoRefresh() {
+                if (this.autoRefreshInterval) {
+                    clearInterval(this.autoRefreshInterval);
+                }
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new PennyStockApp();
+        });
+    </script>
+</body>
+
+</html>

@@ -184,3 +184,213 @@ Who else is diving into the world of AI? Let's connect! 🌐💡
 
 #FirstLLMApp 
 ```
+
+# Penny Stock Gainers App
+
+A comprehensive web application that displays top gainers in penny stocks in the US market. Built with FastAPI backend and modern HTML/CSS/JavaScript frontend.
+
+## Features
+
+- **Real-time Stock Data**: Fetches live penny stock data using Yahoo Finance API
+- **Top Gainers Tracking**: Displays stocks with the highest percentage gains
+- **Penny Stock Focus**: Specifically targets stocks under $5.00
+- **Beautiful UI**: Modern, responsive design with glassmorphism effects
+- **Auto-refresh**: Automatically updates data every 5 minutes
+- **Interactive Controls**: Adjustable limits and manual refresh options
+- **Market Statistics**: Overview of total stocks, average gains, and top performers
+- **Mobile Responsive**: Works seamlessly on all device sizes
+
+## Tech Stack
+
+### Backend
+- **FastAPI**: Modern, fast web framework for building APIs
+- **yfinance**: Yahoo Finance API wrapper for stock data
+- **Pydantic**: Data validation and settings management
+- **Uvicorn**: ASGI server for running the application
+
+### Frontend
+- **HTML5**: Semantic markup
+- **CSS3**: Modern styling with CSS Grid, Flexbox, and animations
+- **JavaScript ES6+**: Class-based architecture with async/await
+- **Font Awesome**: Icons for enhanced UI
+- **Google Fonts**: Inter font family for typography
+
+## Installation & Setup
+
+### Prerequisites
+- Python 3.8+
+- pip package manager
+
+### Backend Setup
+
+1. Navigate to the API directory:
+```bash
+cd api
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Run the FastAPI server:
+```bash
+python app.py
+```
+
+The API will be available at `http://localhost:8000`
+
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+```bash
+cd frontend
+```
+
+2. Open `index.html` in your web browser or serve it using a local server:
+```bash
+# Using Python
+python -m http.server 8001
+
+# Using Node.js (if you have it installed)
+npx serve .
+
+# Using PHP (if you have it installed)
+php -S localhost:8001
+```
+
+## API Endpoints
+
+### Penny Stock Gainers
+- **GET** `/api/penny-stocks/gainers`
+- **Query Parameters**: `limit` (default: 20)
+- **Response**: List of penny stocks with highest gains
+
+### Health Check
+- **GET** `/api/health`
+- **Response**: API status confirmation
+
+### Chat Endpoint (Legacy)
+- **POST** `/api/chat`
+- **Body**: ChatRequest model with OpenAI integration
+
+## Data Model
+
+### PennyStock
+```json
+{
+  "symbol": "SNDL",
+  "company_name": "Sundial Growers Inc.",
+  "current_price": 1.2345,
+  "previous_close": 1.2000,
+  "change": 0.0345,
+  "change_percent": 2.88,
+  "volume": 1234567,
+  "market_cap": 1234567890,
+  "sector": "Healthcare"
+}
+```
+
+## Stock Categories
+
+The app focuses on common penny stock categories:
+- **Cannabis/Healthcare**: SNDL, HEXO, ACB, TLRY, CGC
+- **Electric Vehicles**: FUV, WKHS, IDEX, SOLO, RIDE, NKLA
+- **Technology**: MARK, CIDM, GNUS, TNXP
+- **Shipping/Transport**: SHIP, TOP
+- **And many more...**
+
+## Configuration
+
+### Backend Configuration
+- **Port**: 8000 (configurable in `app.py`)
+- **CORS**: Enabled for all origins
+- **Data Source**: Yahoo Finance API via yfinance
+
+### Frontend Configuration
+- **API URL**: `http://localhost:8000` (configurable in JavaScript)
+- **Auto-refresh**: 5 minutes (configurable in JavaScript)
+- **Default Limit**: 20 stocks
+
+## Usage
+
+1. **Start the Backend**: Run the FastAPI server
+2. **Open Frontend**: Navigate to the frontend HTML file
+3. **Fetch Data**: Click "Fetch Stocks" or wait for auto-refresh
+4. **Adjust Settings**: Modify the number of stocks to display
+5. **Monitor Performance**: View market statistics and individual stock cards
+
+## Features in Detail
+
+### Stock Cards
+Each stock is displayed in a beautiful card showing:
+- Stock symbol and company name
+- Current price and previous close
+- Dollar and percentage change
+- Trading volume and market cap
+- Sector classification
+
+### Market Overview
+Real-time statistics including:
+- Total number of stocks found
+- Average percentage gain
+- Top performing stock
+- Last update timestamp
+
+### Responsive Design
+- **Desktop**: Multi-column grid layout
+- **Tablet**: Adaptive grid with optimized spacing
+- **Mobile**: Single-column layout with touch-friendly controls
+
+## Error Handling
+
+- **Network Errors**: Graceful fallback with user-friendly messages
+- **Data Validation**: Pydantic models ensure data integrity
+- **API Failures**: Comprehensive error logging and user feedback
+- **Stock Fetching**: Individual stock failures don't break the entire system
+
+## Performance Considerations
+
+- **Async Operations**: Non-blocking API calls for better responsiveness
+- **Data Caching**: Efficient data fetching with minimal API calls
+- **Optimized Rendering**: Efficient DOM manipulation and updates
+- **Memory Management**: Proper cleanup of intervals and event listeners
+
+## Security Features
+
+- **CORS Configuration**: Proper cross-origin resource sharing
+- **Input Validation**: Server-side validation of all parameters
+- **Error Sanitization**: Safe error messages without sensitive information
+- **Rate Limiting**: Built-in protection against excessive requests
+
+## Future Enhancements
+
+- **Real-time WebSocket Updates**: Live price updates
+- **Historical Data Charts**: Price movement visualization
+- **Portfolio Tracking**: Save and monitor favorite stocks
+- **Alert System**: Price change notifications
+- **Advanced Filtering**: Sector, market cap, and volume filters
+- **Export Functionality**: CSV/PDF export of stock data
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is open source and available under the MIT License.
+
+## Support
+
+For issues and questions:
+1. Check the FAQ section
+2. Review the API documentation
+3. Open an issue on GitHub
+
+## Disclaimer
+
+This application is for informational purposes only. Stock data is provided by Yahoo Finance and may have delays. Always do your own research before making investment decisions. The developers are not responsible for any financial losses.
