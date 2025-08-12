@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Stock Recommendations - Penny Stock Gainers</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .ai-controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .control-item label {
+            color: white;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .control-item input,
+        .control-item select,
+        .control-item textarea {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .control-item textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: #d63031;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .success {
+            background: rgba(0, 184, 148, 0.1);
+            border: 1px solid rgba(0, 184, 148, 0.3);
+            color: #00b894;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .recommendation-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .recommendation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .recommendation-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00b894, #00cec9);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .stock-symbol {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3436;
+        }
+
+        .risk-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .risk-low {
+            background: rgba(0, 184, 148, 0.1);
+            color: #00b894;
+        }
+
+        .risk-medium {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+
+        .risk-high {
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+        }
+
+        .company-name {
+            font-size: 1.1rem;
+            color: #636e72;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        .reasoning {
+            background: rgba(116, 75, 162, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-style: italic;
+            color: #2d3436;
+            line-height: 1.5;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            color: #636e72;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2d3436;
+        }
+
+        .sector-tag {
+            background: rgba(116, 75, 162, 0.1);
+            color: #764ba2;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-align: center;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .example-prompts {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .example-prompts h3 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .prompt-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .prompt-example {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .prompt-example:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .prompt-example h4 {
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .prompt-example p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .stats h3 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .navigation {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .recommendations-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-item input,
+            .control-item select,
+            .control-item textarea {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-robot"></i> AI Stock Recommendations</h1>
+            <p>Get intelligent stock suggestions powered by OpenAI</p>
+        </div>
+
+        <div class="navigation">
+            <a href="index.html" class="nav-btn">
+                <i class="fas fa-chart-line"></i> Penny Stock Gainers
+            </a>
+            <a href="ai-stocks.html" class="nav-btn">
+                <i class="fas fa-robot"></i> AI Recommendations
+            </a>
+        </div>
+
+        <div class="ai-controls">
+            <div class="control-group">
+                <div class="control-item">
+                    <label for="prompt">What kind of stocks are you looking for?</label>
+                    <textarea id="prompt" placeholder="e.g., 'Show me penny stocks in the cannabis sector with high growth potential' or 'Find me technology penny stocks under $2'"></textarea>
+                </div>
+                <div class="control-item">
+                    <label for="maxStocks">Number of Recommendations</label>
+                    <select id="maxStocks">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label for="apiKey">OpenAI API Key</label>
+                    <input type="password" id="apiKey" placeholder="Enter your OpenAI API key">
+                </div>
+                <div class="control-item">
+                    <label>&nbsp;</label>
+                    <button class="btn" id="generateBtn">
+                        <i class="fas fa-magic"></i> Generate Recommendations
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="example-prompts">
+            <h3><i class="fas fa-lightbulb"></i> Example Prompts</h3>
+            <div class="prompt-examples">
+                <div class="prompt-example" onclick="usePrompt(this)">
+                    <h4>🚀 High Growth Tech</h4>
+                    <p>"Find me technology penny stocks with high growth potential in AI or blockchain"</p>
+                </div>
+                <div class="prompt-example" onclick="usePrompt(this)">
+                    <h4>🌿 Cannabis Sector</h4>
+                    <p>"Show me cannabis-related penny stocks with strong fundamentals"</p>
+                </div>
+                <div class="prompt-example" onclick="usePrompt(this)">
+                    <h4>⚡ Electric Vehicles</h4>
+                    <p>"Recommend EV penny stocks with innovative technology"</p>
+                </div>
+                <div class="prompt-example" onclick="usePrompt(this)">
+                    <h4>💊 Healthcare Innovation</h4>
+                    <p>"Find healthcare penny stocks focused on breakthrough treatments"</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>AI is analyzing the market and generating recommendations...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="success" class="success" style="display: none;"></div>
+
+        <div id="stats" class="stats" style="display: none;">
+            <h3><i class="fas fa-chart-bar"></i> AI Analysis Results</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalRecommendations">0</div>
+                    <div class="stat-label">Total Recommendations</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="modelUsed">-</div>
+                    <div class="stat-label">AI Model Used</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="generationTime">-</div>
+                    <div class="stat-label">Generation Time</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="lastUpdate">-</div>
+                    <div class="stat-label">Last Update</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="recommendationsContainer" class="recommendations-grid"></div>
+
+        <div class="navigation">
+            <a href="index.html" class="nav-btn">
+                <i class="fas fa-arrow-left"></i> Back to Penny Stocks
+            </a>
+        </div>
+    </div>
+
+    <script>
+        class AIStockRecommender {
+            constructor() {
+                this.apiUrl = this.getApiUrl();
+                this.recommendations = [];
+                this.init();
+            }
+
+            getApiUrl() {
+                // Check if we're running on Vercel
+                if (window.location.hostname.includes('vercel.app')) {
+                    return '/api/ai/stocks/generate';
+                } else {
+                    return 'http://localhost:8000/api/ai/stocks/generate';
+                }
+            }
+
+            init() {
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                document.getElementById('generateBtn').addEventListener('click', () => {
+                    this.generateRecommendations();
+                });
+
+                // Auto-resize textarea
+                document.getElementById('prompt').addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = this.scrollHeight + 'px';
+                });
+            }
+
+            async generateRecommendations() {
+                const prompt = document.getElementById('prompt').value.trim();
+                const maxStocks = document.getElementById('maxStocks').value;
+                const apiKey = document.getElementById('apiKey').value.trim();
+                const loading = document.getElementById('loading');
+                const error = document.getElementById('error');
+                const success = document.getElementById('success');
+                const generateBtn = document.getElementById('generateBtn');
+
+                if (!prompt) {
+                    this.showError('Please enter a prompt describing the stocks you want');
+                    return;
+                }
+
+                if (!apiKey) {
+                    this.showError('Please enter your OpenAI API key');
+                    return;
+                }
+
+                try {
+                    loading.style.display = 'block';
+                    error.style.display = 'none';
+                    success.style.display = 'none';
+                    generateBtn.disabled = true;
+
+                    const startTime = Date.now();
+
+                    const response = await fetch(this.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            api_key: apiKey,
+                            max_stocks: parseInt(maxStocks),
+                            model: 'gpt-4.1-mini'
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const generationTime = ((Date.now() - startTime) / 1000).toFixed(2);
+
+                    if (data.error) {
+                        this.showError(`AI Generation Error: ${data.error}`);
+                        return;
+                    }
+
+                    this.recommendations = data.recommendations || [];
+                    this.displayRecommendations(data);
+                    this.updateStats(data, generationTime);
+                    this.showSuccess(`Successfully generated ${this.recommendations.length} stock recommendations!`);
+
+                } catch (err) {
+                    console.error('Error generating recommendations:', err);
+                    this.showError(`Failed to generate recommendations: ${err.message}`);
+                } finally {
+                    loading.style.display = 'none';
+                    generateBtn.disabled = false;
+                }
+            }
+
+            displayRecommendations(data) {
+                const container = document.getElementById('recommendationsContainer');
+                container.innerHTML = '';
+
+                if (this.recommendations.length === 0) {
+                    container.innerHTML = `
+                        <div class="recommendation-card" style="grid-column: 1 / -1; text-align: center;">
+                            <h3>No recommendations generated</h3>
+                            <p>Try adjusting your prompt or check the API key.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.recommendations.forEach(recommendation => {
+                    const card = this.createRecommendationCard(recommendation);
+                    container.appendChild(card);
+                });
+            }
+
+            createRecommendationCard(recommendation) {
+                const card = document.createElement('div');
+                card.className = 'recommendation-card';
+
+                const riskClass = this.getRiskClass(recommendation.risk_level);
+                const sector = recommendation.sector || 'Unknown';
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="stock-symbol">${recommendation.symbol}</div>
+                        <div class="risk-badge ${riskClass}">${recommendation.risk_level || 'Unknown'}</div>
+                    </div>
+                    <div class="company-name">${recommendation.company_name}</div>
+                    <div class="reasoning">${recommendation.reasoning}</div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Sector</div>
+                            <div class="detail-value">${sector}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Potential Catalyst</div>
+                            <div class="detail-value">${recommendation.potential_catalyst || 'N/A'}</div>
+                        </div>
+                    </div>
+                    <div class="sector-tag">${sector}</div>
+                `;
+
+                return card;
+            }
+
+            getRiskClass(riskLevel) {
+                if (!riskLevel) return 'risk-medium';
+                const level = riskLevel.toLowerCase();
+                if (level.includes('low')) return 'risk-low';
+                if (level.includes('high')) return 'risk-high';
+                return 'risk-medium';
+            }
+
+            updateStats(data, generationTime) {
+                document.getElementById('totalRecommendations').textContent = this.recommendations.length;
+                document.getElementById('modelUsed').textContent = data.model_used || 'Unknown';
+                document.getElementById('generationTime').textContent = `${generationTime}s`;
+                document.getElementById('lastUpdate').textContent = new Date(data.timestamp).toLocaleTimeString();
+                document.getElementById('stats').style.display = 'block';
+            }
+
+            showSuccess(message) {
+                const success = document.getElementById('success');
+                success.textContent = message;
+                success.style.display = 'block';
+                setTimeout(() => {
+                    success.style.display = 'none';
+                }, 5000);
+            }
+
+            showError(message) {
+                const error = document.getElementById('error');
+                error.textContent = message;
+                error.style.display = 'block';
+            }
+        }
+
+        // Example prompt functionality
+        function usePrompt(element) {
+            const promptText = element.querySelector('p').textContent;
+            document.getElementById('prompt').value = promptText;
+            document.getElementById('prompt').focus();
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new AIStockRecommender();
+        });
+    </script>
+</body>
+
+</html>

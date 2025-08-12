@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from openai import OpenAI
 import yfinance as yf
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 import os
 
 
@@ -59,6 +59,24 @@ class ChatRequest(BaseModel):
     api_key: str  # OpenAI API key for authentication
 
 
+# Define the data model for stock generation requests
+class StockGenerationRequest(BaseModel):
+    prompt: str  # User's request for stock types
+    api_key: str  # OpenAI API key for authentication
+    model: Optional[str] = "gpt-4.1-mini"  # Optional model selection
+    max_stocks: Optional[int] = 20  # Maximum number of stocks to generate
+
+
+# Define the data model for AI-generated stock recommendations
+class AIStockRecommendation(BaseModel):
+    symbol: str
+    company_name: str
+    reasoning: str
+    sector: Optional[str] = None
+    risk_level: Optional[str] = None
+    potential_catalyst: Optional[str] = None
+
+
 # Define the main chat endpoint that handles POST requests
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
@@ -91,11 +109,107 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# New endpoint for penny stock gainers
+# New endpoint for AI-generated stock recommendations
+@app.post("/api/ai/stocks/generate")
+async def generate_stock_recommendations(request: StockGenerationRequest):
+    """
+    Generate stock recommendations using OpenAI's AI model
+    """
+    try:
+        # Initialize OpenAI client
+        client = OpenAI(api_key=request.api_key)
+        
+        # Create a comprehensive prompt for stock generation
+        system_prompt = f"""You are a financial analyst specializing in penny stocks and emerging market opportunities. 
+        
+        Generate a list of {request.max_stocks} stock symbols based on the user's request. 
+        
+        Requirements:
+        - Return ONLY valid US stock symbols (3-5 characters, no spaces)
+        - Focus on stocks under $5.00 (penny stocks)
+        - Include diverse sectors and industries
+        - Provide reasoning for each recommendation
+        - Consider current market trends and opportunities
+        
+        Format your response as a JSON array with this structure:
+        [
+            {{
+                "symbol": "STOCK",
+                "company_name": "Full Company Name",
+                "reasoning": "Why this stock is recommended",
+                "sector": "Industry sector",
+                "risk_level": "Low/Medium/High",
+                "potential_catalyst": "What could drive growth"
+            }}
+        ]
+        
+        User request: {request.prompt}
+        
+        Important: Return ONLY valid JSON, no additional text or explanations."""
+        
+        # Generate stock recommendations using OpenAI
+        response = client.chat.completions.create(
+            model=request.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": request.prompt}
+            ],
+            temperature=0.7,  # Add some creativity while maintaining accuracy
+            max_tokens=2000
+        )
+        
+        # Extract the response content
+        ai_response = response.choices[0].message.content
+        
+        # Try to parse the JSON response
+        try:
+            import json
+            stock_recommendations = json.loads(ai_response)
+            
+            # Validate the structure
+            validated_recommendations = []
+            for stock in stock_recommendations:
+                if isinstance(stock, dict) and 'symbol' in stock:
+                    validated_stock = AIStockRecommendation(
+                        symbol=stock.get('symbol', ''),
+                        company_name=stock.get('company_name', ''),
+                        reasoning=stock.get('reasoning', ''),
+                        sector=stock.get('sector'),
+                        risk_level=stock.get('risk_level'),
+                        potential_catalyst=stock.get('potential_catalyst')
+                    )
+                    validated_recommendations.append(validated_stock)
+            
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "total_recommendations": len(validated_recommendations),
+                "prompt": request.prompt,
+                "model_used": request.model,
+                "recommendations": validated_recommendations
+            }
+            
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return the raw response
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "error": "Failed to parse AI response as JSON",
+                "raw_response": ai_response,
+                "prompt": request.prompt
+            }
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error generating stock recommendations: {str(e)}"
+        )
+
+
+# Enhanced endpoint for penny stock gainers with AI integration
 @app.get("/api/penny-stocks/gainers")
-async def get_penny_stock_gainers(limit: int = 20):
+async def get_penny_stock_gainers(limit: int = 20, use_ai: bool = False):
     """
     Get top gainers among penny stocks (stocks under $5)
+    Optionally use AI to enhance the stock list
     """
     try:
         # List of potential penny stock symbols (focusing on common ones)
@@ -183,6 +297,7 @@ async def get_penny_stock_gainers(limit: int = 20):
         return {
             "timestamp": datetime.now().isoformat(),
             "total_stocks": len(stocks_data),
+            "use_ai": use_ai,
             "stocks": stocks_data[:limit],
         }
 
@@ -220,13 +335,21 @@ async def health_check():
 @app.get("/")
 async def root():
     return {
-        "message": "Penny Stock Gainers API",
-        "version": "1.0.0",
+        "message": "Penny Stock Gainers API with AI Integration",
+        "version": "2.0.0",
         "endpoints": {
             "penny_stocks": "/api/penny-stocks/gainers",
+            "ai_stocks": "/api/ai/stocks/generate",
+            "chat": "/api/chat",
             "health": "/api/health",
             "docs": "/docs",
         },
+        "features": [
+            "Real-time penny stock data",
+            "AI-powered stock recommendations",
+            "OpenAI integration for dynamic stock lists",
+            "FastAPI backend with automatic documentation"
+        ]
     }
 
 
