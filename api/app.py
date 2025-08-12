@@ -23,13 +23,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "http://localhost:8001", 
+        "http://localhost:8001",
         "http://localhost:8000",
         "https://*.vercel.app",
         "https://*.vercel.app/*",
         "https://vercel.app",
         "https://vercel.app/*",
-        "*"  # Allow all origins for development
+        "*",  # Allow all origins for development
     ],
     allow_credentials=True,  # Allows cookies to be included in requests
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
@@ -225,8 +225,8 @@ async def root():
         "endpoints": {
             "penny_stocks": "/api/penny-stocks/gainers",
             "health": "/api/health",
-            "docs": "/docs"
-        }
+            "docs": "/docs",
+        },
     }
 
 
