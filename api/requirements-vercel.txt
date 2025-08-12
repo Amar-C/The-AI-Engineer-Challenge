@@ -1,0 +1,8 @@
+fastapi==0.115.12
+uvicorn==0.34.2
+openai==1.77.0
+pydantic==2.11.4
+python-multipart==0.0.18
+yfinance==0.2.36
+pandas==2.1.4
+requests==2.31.0

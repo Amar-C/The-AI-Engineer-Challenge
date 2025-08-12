@@ -11,6 +11,7 @@ from openai import OpenAI
 import yfinance as yf
 from datetime import datetime
 from typing import Optional
+import os
 
 
 # Initialize FastAPI application with a title
@@ -20,7 +21,16 @@ app = FastAPI(title="Penny Stock Gainers API")
 # This allows the API to be accessed from different domains/origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows requests from any origin
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:8001", 
+        "http://localhost:8000",
+        "https://*.vercel.app",
+        "https://*.vercel.app/*",
+        "https://vercel.app",
+        "https://vercel.app/*",
+        "*"  # Allow all origins for development
+    ],
     allow_credentials=True,  # Allows cookies to be included in requests
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers in requests
@@ -204,6 +214,20 @@ async def get_penny_stock_gainers_alternative(limit: int = 20):
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok"}
+
+
+# Root endpoint for Vercel compatibility
+@app.get("/")
+async def root():
+    return {
+        "message": "Penny Stock Gainers API",
+        "version": "1.0.0",
+        "endpoints": {
+            "penny_stocks": "/api/penny-stocks/gainers",
+            "health": "/api/health",
+            "docs": "/docs"
+        }
+    }
 
 
 # Entry point for running the application directly

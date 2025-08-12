@@ -392,10 +392,22 @@
     <script>
         class PennyStockApp {
             constructor() {
-                this.apiUrl = 'http://localhost:8000/api/penny-stocks/gainers';
+                // Detect environment and set appropriate API URL
+                this.apiUrl = this.getApiUrl();
                 this.stocks = [];
                 this.autoRefreshInterval = null;
                 this.init();
+            }
+
+            getApiUrl() {
+                // Check if we're running on Vercel
+                if (window.location.hostname.includes('vercel.app')) {
+                    // Use relative URL for Vercel deployment
+                    return '/api/penny-stocks/gainers';
+                } else {
+                    // Use localhost for development
+                    return 'http://localhost:8000/api/penny-stocks/gainers';
+                }
             }
 
             init() {
